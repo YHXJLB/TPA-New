@@ -1,0 +1,45 @@
+name: 构建测试
+
+on:
+  push:
+    branches-ignore:
+      - 'main'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: 设置Java环境
+        uses: actions/setup-java@v3
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Maven构建项目
+        run: mvn -B clean package
+
+      - name: 验证构建结果
+        run: |
+          if [ ! -d "target" ]; then
+            echo "::error::构建失败，未生成target目录"
+            exit 1
+          fi
+          echo "=== 构建产物 ==="
+          ls -lh target/
+
+      - name: 上传构建产物
+        uses: actions/upload-artifact@v3
+        with:
+          name: TPA-${{ github.sha }}
+          path: target/*.jar
+          retention-days: 7
